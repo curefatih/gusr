@@ -7,4 +7,4 @@ tiny command line tool for switching between git users
 ### Why then?
 > To experience
 ### Should I use?
-> Prob, no
+> Probably, no
