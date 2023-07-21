@@ -15,8 +15,9 @@ import (
 )
 
 type GitUser struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	Name   string `json:"name"`
+	Email  string `json:"email"`
+	GPGKey string `json:"gpgKey"`
 }
 
 var configFile = "git-users.json"
@@ -143,6 +144,13 @@ func set(cmd *cobra.Command, args []string) {
 			log.Fatal(err)
 		}
 
+		if user.GPGKey != "" {
+			cmd = exec.Command("git", "config", "--global", "user.signingkey", user.GPGKey)
+			if err := cmd.Run(); err != nil {
+				log.Fatal(err)
+			}
+		}
+
 		fmt.Printf("Git user %s set globally\n", user.Name)
 	} else {
 		cmd := exec.Command("git", "config", "user.name", user.Name)
@@ -153,6 +161,13 @@ func set(cmd *cobra.Command, args []string) {
 		cmd = exec.Command("git", "config", "user.email", user.Email)
 		if err := cmd.Run(); err != nil {
 			log.Fatal(err)
+		}
+
+		if user.GPGKey != "" {
+			cmd = exec.Command("git", "config", "user.signingkey", user.GPGKey)
+			if err := cmd.Run(); err != nil {
+				log.Fatal(err)
+			}
 		}
 
 		fmt.Printf("Git user %s set locally\n", user.Name)
@@ -178,9 +193,19 @@ func add(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
+	gpgKeyPrompt := promptui.Prompt{
+		Label: "GPG Key (optional)",
+	}
+
+	gpgKey, err := gpgKeyPrompt.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	newUser := GitUser{
-		Name:  name,
-		Email: email,
+		Name:   name,
+		Email:  email,
+		GPGKey: gpgKey,
 	}
 
 	users, err := loadUsers()
@@ -250,6 +275,9 @@ func list(cmd *cobra.Command, args []string) {
 	fmt.Println("Git users:")
 	for _, user := range users {
 		fmt.Printf("- %s <%s>\n", user.Name, user.Email)
+		if user.GPGKey != "" {
+			fmt.Printf("  GPG key: %s\n", user.GPGKey)
+		}
 	}
 }
 
